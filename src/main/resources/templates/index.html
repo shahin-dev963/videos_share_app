@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Videos Sharing App</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="#" th:href="@{/}">Welcome Videos Sharing App</a>
+        </div>
+
+        <ul class="nav navbar-nav navbar-right">
+            <li sec:authorize="!isAuthenticated()"><a class="navbar-brand" href="#" th:href="@{/login}"><span
+                    class="glyphicon glyphicon-log-in"></span> Login</a></a></li>
+            <li sec:authorize="!isAuthenticated()"><a class="navbar-brand" href="#" th:href="@{/registration}"><span
+                    class="glyphicon glyphicon-user"></span> Sign Up</a></a></li>
+            <li sec:authorize="isAuthenticated()"><a th:href="@{/logout}"><span
+                    class="glyphicon glyphicon-log-out"></span>Logout</a></li>
+            <li sec:authorize="isAuthenticated()"><a type="button" data-toggle="modal" data-target="#addVideos">Add
+                Videos</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container">
+    <br><br><br>
+    <div class="row" sec:authorize="isAuthenticated()">
+        <div class="col-sm-12">
+            <div class="col-sm-4" th:each="video : ${videos}">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title"></h5>
+                        <iframe width="350" height="320" th:src="${video.urlPath}">
+                        </iframe>
+
+                        <div class="col-sm-12">
+                            <div class="col-sm-4">
+                                <button class="btn  btn-sm"
+                                        th:id="video+${video.id}" th:attr="onclick=${'likeFunc('+video.id+')'}"><i
+                                        class="fa fa-thumbs-up"></i></button>
+                                <button class="btn disabled btn-sm" th:classappend="video+${video.id}"
+                                        th:text="${video.likes}"></button>
+                            </div>
+                            <div class="col-sm-4">
+                                <button class="btn btn-sm" th:attr="onclick=${'detailFunc('+video.id+')'}"
+                                        data-toggle="modal" data-target=".detail-modal-lg">Details
+                                </button>
+                            </div>
+                            <div class="col-sm-4" sec:authorize="isAuthenticated()">
+                                <button
+                                        class="btn btn-sm "
+                                        th:id="disLike+${video.id}" th:attr="onclick=${'disLikeFunc('+video.id+')'}"><i
+                                        class="fa fa-thumbs-down"></i></button>
+                                <button class="btn disabled btn-sm" th:classappend="disLike+${video.id}"
+                                        th:text="${video.dislike}"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row" sec:authorize="!isAuthenticated()">
+        <div class="col-sm-12">
+            <div class="col-sm-4" th:each="video : ${videos}">
+                <div class="card ">
+                    <div class="card-body ">
+                        <h5 class="card-title"></h5>
+                        <iframe   width="350" height="320" th:src="${video.urlPath}">
+                        </iframe>
+
+                        <div class="col-sm-12">
+                            <div class="col-sm-4">
+                                <button class="btn disabled  btn-sm"><i class="fa fa-thumbs-up"></i></button>
+                                <button class="btn disabled btn-sm" th:text="${video.likes}"></button>
+                            </div>
+                            <div class="col-sm-4">
+                                <button class="btn btn-sm" th:attr="onclick=${'detailFunc('+video.id+')'}"
+                                        data-toggle="modal" data-target=".detail-modal-lg">Details
+                                </button>
+                            </div>
+                            <div class="col-sm-4">
+                                <button class="btn btn-sm disabled"><i class="fa fa-thumbs-down"></i></button>
+                                <button class="btn btn-sm disabled" th:text="${video.dislike}"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+
+        function detailFunc(video) {
+            var id = video;
+
+            var data = {
+                id: video
+            }
+            $('.tbody').html("");
+            $.ajax({
+                type: 'GET',
+                url: '/common/detail',
+                data: data,
+                success: function (data) {
+                    let rows = "";
+                    $.each(data, function (index, item) {
+                        rows += "<tr>" +
+                            "<td>" + (!!item.uploaderName ? item.uploaderName : '-') + "</td>" +
+                            "<td>" + (!!item.userName ? item.userName : '-') + "</td>" +
+                            "<td>" + (!!item.likes ? item.likes : '0') + "</td>" +
+                            "<td>" + (!!item.dislikes ? item.dislikes : '0') + "</td>" +
+                            "</tr>";
+                    });
+
+                    $('.tbody').html(rows);
+
+                    if (data.length == 0) {
+                        detailFunc2(video);
+                    }
+                },
+                error: function (err) {
+                    console.log("not working. ERROR: " + JSON.stringify(err));
+                }
+            });
+        }
+
+        function detailFunc2(video) {
+            var id = video;
+
+            var data = {
+                id: video
+            }
+            $('.tbody').html("");
+            $.ajax({
+                type: 'GET',
+                url: '/common/detail/single/data',
+                data: data,
+                success: function (data) {
+                    let rows = "";
+                    rows += "<tr>" +
+                        "<td>" + data.uploaderName + "</td>" +
+                        "<td>" + "-" + "</td>" +
+                        "<td>" + "0" + "</td>" +
+                        "<td>" + "0" + "</td>" +
+                        "</tr>";
+
+                    $('.tbody').html(rows);
+                },
+                error: function (err) {
+                    console.log("not working. ERROR: " + JSON.stringify(err));
+                }
+            });
+        }
+
+        function likeFunc(video) {
+            var id = video;
+            var data = {
+                id: video
+            }
+            $.ajax({
+                url: '/common/like/save',
+                type: 'POST',
+                data: data,
+                success: function (data) {
+                    // $("#video"+video).addClass("green");
+                    // $("#disLike"+video).removeClass("red");
+                    $(".video" + video).text(data.videosDto.likes);
+                    $(".disLike" + video).text(data.videosDto.dislike);
+                }
+            });
+        }
+
+        function disLikeFunc(video) {
+            var id = video;
+            var data = {
+                id: video
+            }
+            $.ajax({
+                url: '/common/dislike/save',
+                type: 'POST',
+                data: data,
+                success: function (data) {
+                    // $("#video"+video).removeClass("green");
+                    // $("#disLike"+video).addClass("red")
+                    $(".video" + video).text(data.videosDto.likes);
+                    $(".disLike" + video).text(data.videosDto.dislike);
+                }
+            });
+        }
+    </script>
+
+    <style>
+        button {
+            cursor: pointer;
+            outline: 0;
+            color: #AAA;
+
+        }
+        .btn:focus {
+            outline: none;
+        }
+    </style>
+
+    <!-- Modal -->
+
+    <div class="modal fade detail-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="myLargeModalLabel">Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th>UPLOADER NAME</th>
+                            <th>USER NAME</th>
+                            <th>LIKE</th>
+                            <th>DISLIKE</th>
+                        </tr>
+                        </thead>
+                        <tbody class="tbody">
+
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addVideos" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content " sec:authorize="isAuthenticated()">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Add Videos</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="control-label" for="urlPath"> Youtube Share URL </label>
+                        <input id="urlPath" class="form-control" name="urlPath" required autofocus="autofocus"/>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="text" id="urlPathSubmit" th:attr="onclick=${'submit()'}" value="submit"
+                            class="btn btn-primary">Save
+                    </button>
+                </div>
+
+                <script>
+                    function submit() {
+                        var rex = /[a-zA-Z0-9\-\_]{11}/,
+                            videoUrl = $('#urlPath').val() === '' ? alert('Enter a valid Url') : $('#urlPath').val(),
+                            videoId = videoUrl.match(rex),
+                            embedUrl = 'https://www.youtube.com/embed/' + videoId
+                        var data = {
+                            urlPath: embedUrl
+                        }
+                        $.ajax({
+                            url: '/upload',
+                            type: 'POST',
+                            data: data,
+                            success: function (data) {
+                                location.replace("/")
+                            }
+                        });
+                    }
+                </script>
+            </div>
+        </div>
+    </div>
+    <br><br>
+</div>
+</body>
+</html>
+
+
+
+
+
+
+
+ 
